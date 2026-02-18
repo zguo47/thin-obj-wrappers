@@ -30,6 +30,8 @@ class DepthAnythingV2Model(torch.nn.Module):
         self.model = DepthAnythingV2BaseModel(**model_configs[encoder])
 
         if use_pretrained:
+            path =f'model_ckpt/depthanything_v2/depth_anything_v2_{encoder}.pth'
+            print("path", path)
             self.model.load_state_dict(torch.load(f'model_ckpt/depthanything_v2/depth_anything_v2_{encoder}.pth'))
 
         self.device = device
