@@ -1,7 +1,8 @@
 import os, sys
 import numpy as np
 import cv2, torch
-sys.path.insert(0, os.path.join('external_src', 'monocular_depth', 'Depth-Anything-V2'))
+model_folder = os.path.join('external_src', 'monocular_depth', 'Depth-Anything-V2')
+sys.path.insert(0, model_folder)
 from depth_anything_v2.dpt import DepthAnythingV2 as DepthAnythingV2BaseModel
 from run_helper_functions import resize_image
 
@@ -30,7 +31,8 @@ class DepthAnythingV2Model(torch.nn.Module):
         self.model = DepthAnythingV2BaseModel(**model_configs[encoder])
 
         if use_pretrained:
-            self.model.load_state_dict(torch.load(f'{model_path}/model_ckpts/depthanything_v2/depth_anything_v2_{encoder}.pth'))
+            ckpt_path = os.path.join(model_folder, 'model_ckpt', 'depthanything_v2', f'depth_anything_v2_{encoder}.pth')
+            self.model.load_state_dict(torch.load(ckpt_path))
 
         self.device = device
         self.to(self.device)
