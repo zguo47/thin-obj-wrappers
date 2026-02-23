@@ -261,7 +261,6 @@ if "__main__" == __name__:
                 batch_size=0,
                 color_map=None,
                 show_progress_bar=False,
-                resample_method=resample_method,
                 generator=generator,
             )
 
