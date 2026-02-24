@@ -35,7 +35,7 @@ class MarigoldModel(torch.nn.Module):
         else:
             dtype = torch.float32
 
-        ckpt_path = os.path.join('model_ckpts', 'depthanything_v2', f'depth_anything_v2.pth')
+        ckpt_path = os.path.join('model_ckpts', 'marigold', 'marigold-depth-v1-1.pth')
         self.model : MarigoldDepthPipeline = MarigoldDepthPipeline.from_pretrained(ckpt_path, variant=variant, torch_dtype=dtype)
 
         # TODO: these are used when model is called. Check if I should just use the yaml/any of these fields require special handling or init
