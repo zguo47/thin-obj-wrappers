@@ -3,7 +3,7 @@ python src/monocular_depth/run_external_mde_model.py \
     /media/common/datasets/thin_object_data_subset/markerholder_hallway/image.txt \
 --ground_truth_path \
     /media/common/datasets/thin_object_data_subset/markerholder_hallway/aligned_depth.txt \
---model_name depthanything-v2 \
+--model_name marigold \
 --dataset_name thin-obj \
 --evaluation_protocol default \
 --output_dirpath \
