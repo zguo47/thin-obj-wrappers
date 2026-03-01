@@ -27,7 +27,7 @@ class MarigoldModel(torch.nn.Module):
         use_pretrained : bool
             if set, then configure using legacy settings
     '''
-    def __init__(self, denoise_steps, ensemble_size,processing_res, match_input_res, batch_size, color_map, show_progress_bar=False, resample_method='bilinear', seed=1234, device=torch.device('cuda'), variant="fp32"):
+    def __init__(self, denoise_steps, ensemble_size,processing_res, match_input_res, batch_size, color_map, show_progress_bar=False, resample_method='bilinear', seed=1234, device=torch.device('cuda'), variant="fp16"):
         super().__init__()
 
         if variant == "fp16":
@@ -35,7 +35,7 @@ class MarigoldModel(torch.nn.Module):
         else:
             dtype = torch.float32
 
-        ckpt_path = os.path.join('model_ckpts', 'marigold', 'marigold-depth-v1-1.pth')
+        ckpt_path = os.path.join('model_ckpts', 'marigold', 'marigold-depth-v1-1')
         self.model : MarigoldDepthPipeline = MarigoldDepthPipeline.from_pretrained(ckpt_path, variant=variant, torch_dtype=dtype)
 
         # TODO: these are used when model is called. Check if I should just use the yaml/any of these fields require special handling or init
@@ -70,7 +70,7 @@ class MarigoldModel(torch.nn.Module):
         depth_outputs = []
 
         for ind_image in image:
-            rgb_int = ind_image.squeeze().numpy().astype(np.uint8)  # [3, H, W]
+            rgb_int = ind_image.cpu().squeeze().numpy().astype(np.uint8)  # [3, H, W]
             rgb_int = np.moveaxis(rgb_int, 0, -1)  # [H, W, 3]
             image_input = Image.fromarray(rgb_int)
 
@@ -90,10 +90,13 @@ class MarigoldModel(torch.nn.Module):
 
             # TODO: check output size & type. Range = [0,1], but need to see if it's inverse
             depth_pred: np.ndarray = output.depth_np
-            print("Output shape, range & type", depth_pred.shape, np.min(depth_pred), np.max(depth_pred), depth_pred.dtype)
             depth_outputs.append(depth_pred)
 
-        return np.stack(depth_outputs)[:, None, :, :]
+            depth_outputs = np.stack(depth_outputs)[:, None, :, :]
+            depth_outputs = torch.as_tensor(depth_outputs, device=self.device)
+
+            depth_outputs[depth_outputs == 0] += 1e-8
+        return depth_outputs
 
     def compute_loss(self, output_depth, ground_truth_depth, l1_weight=1.0, l2_weight=1.0):
         '''
@@ -130,8 +133,7 @@ class MarigoldModel(torch.nn.Module):
             list[torch.Tensor[float32]] : list of parameters
         '''
 
-        parameters = []
-        parameters = torch.nn.ParameterList(self.model.parameters())
+        parameters = list(self.model.unet.parameters()) + list(self.model.vae.parameters()) + list(self.model.text_encoder.parameters())
 
         return parameters
 
@@ -141,14 +143,15 @@ class MarigoldModel(torch.nn.Module):
         '''
 
         super().train(mode)
-        self.model.train()
+        # NOTE: do nothing else because this model currently only hosts MarigoldDepthPipeline, which is only for inference
 
     def eval(self):
         '''
         Sets model to evaluation mode
         '''
 
-        self.model.eval()
+        # NOTE: do nothing because this model's MarigoldDepthPipeline is defaulted to eval() and is only used for inference
+        return
 
     def to(self, device):
         '''

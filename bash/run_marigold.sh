@@ -10,4 +10,5 @@ python src/monocular_depth/run_external_mde_model.py \
     /media/home/anduong/thin-obj-result/marigold/markerholder_hallway \
 --save_outputs \
 --keep_input_filenames \
+--min_evaluate_depth 1e-5 \
 --device gpu
