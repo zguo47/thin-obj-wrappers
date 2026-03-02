@@ -70,11 +70,18 @@ class MarigoldModel(torch.nn.Module):
         depth_outputs = []
 
         for ind_image in image:
-            rgb_int = ind_image.cpu().squeeze().numpy().astype(np.uint8)  # [3, H, W]
-            rgb_int = np.moveaxis(rgb_int, 0, -1)  # [H, W, 3]
-            image_input = Image.fromarray(rgb_int)
+            # rgb_int = ind_image.cpu().squeeze().numpy().astype(np.uint8)  # [3, H, W]
+            # rgb_int = np.moveaxis(rgb_int, 0, -1)  # [H, W, 3]
+            # image_input = Image.fromarray(rgb_int)
+
+            # for depth, input values are not normalized
+            image_input = ind_image
+            # CHECKING RANGE
+            print("image input range & dtype:", image_input.min(), image_input.max(), image_input.dtype)
 
             # NOTE: this is only for inference, it's called with torch.no_grad
+            # MarigoldDepthPipeline expects image_input to have size [1, rgb, H, W] if is tensor, and [H, W, rgb] if is PIL Image
+            # model expects input to be in range [0, 255] regardless of input type (check MarigoldDepthPipeline)
             output = self.model(
                         image_input,
                         denoising_steps=self.denoise_steps,
@@ -88,7 +95,7 @@ class MarigoldModel(torch.nn.Module):
                         generator=self.generator,
                     )
 
-            # TODO: check output size & type. Range = [0,1], but need to see if it's inverse
+            # Range = [0,1], normal values, not inverse
             depth_pred: np.ndarray = output.depth_np
             depth_outputs.append(depth_pred)
 
