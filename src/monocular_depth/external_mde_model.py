@@ -60,6 +60,18 @@ class ExternalMonocularDepthEstimationModel(torch.nn.Module):
                 use_pretrained=True,
                 model_type=model_name,
                 device=device)
+        elif 'marigold' in model_name:
+            from marigold_model import MarigoldModel
+            # numbers based on Marigold's test yaml configs
+            self.model = MarigoldModel(
+                denoise_steps=1,
+                ensemble_size=10,
+                processing_res=0,
+                match_input_res=True, # not going to be used because processing_res is None
+                batch_size=0,
+                color_map=None,
+                resample_method='bicubic'
+            )
         else:
             raise ValueError('Unsupported monocular depth estimation model: {}'.format(model_name))
 

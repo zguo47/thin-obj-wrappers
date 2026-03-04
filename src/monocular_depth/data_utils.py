@@ -351,7 +351,7 @@ def load_depth(path, multiplier=256.0, data_format='HW'):
 
     return z
 
-def save_depth(z, path, multiplier=256.0):
+def save_depth(z, path, multiplier=256.0, depth_npy_filepath=None):
     '''
     Saves a depth map to a 16-bit PNG file
 
@@ -365,6 +365,8 @@ def save_depth(z, path, multiplier=256.0):
     '''
 
     z = np.uint32(z * multiplier)
+    if depth_npy_filepath is not None:
+        np.save(depth_npy_filepath, z)
     z = Image.fromarray(z, mode='I')
     z.save(path)
 
