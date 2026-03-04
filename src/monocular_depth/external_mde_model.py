@@ -66,7 +66,7 @@ class ExternalMonocularDepthEstimationModel(torch.nn.Module):
             self.model = MarigoldModel(
                 denoise_steps=1,
                 ensemble_size=10,
-                processing_res=None,
+                processing_res=0,
                 match_input_res=True, # not going to be used because processing_res is None
                 batch_size=0,
                 color_map=None,

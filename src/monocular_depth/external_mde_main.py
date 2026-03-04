@@ -203,12 +203,16 @@ def run_mde(image_path,
 
         image_dirpath = os.path.join(output_dirpath, 'image')
         output_depth_dirpath = os.path.join(output_dirpath, 'output_monocular_depth')
+        output_depth_npy_dirpath = os.path.join(output_dirpath, 'output_monocular_depth_npy')
         ground_truth_dirpath = os.path.join(output_dirpath, 'ground_truth')
+        ground_truth_npy_dirpath = os.path.join(output_dirpath, 'ground_truth_npy')
 
         dirpaths = [
             image_dirpath,
             output_depth_dirpath,
-            ground_truth_dirpath
+            ground_truth_dirpath,
+            ground_truth_npy_dirpath,
+            output_depth_npy_dirpath
         ]
 
         for dirpath in dirpaths:
@@ -271,17 +275,15 @@ def run_mde(image_path,
                 filename = os.path.basename(image_paths[idx])
                 image_filename = os.path.splitext(filename)[0] + ".jpg"
                 depth_filename = os.path.splitext(filename)[0] + ".png"
+                depth_npy_filename = os.path.splitext(filename)[0] + ".npy"
             else:
                 filename = '{:010d}'.format(idx)
                 image_filename = filename + '.jpg'
-                image_npy_filename = filename + '.npy'
                 depth_filename = filename + '.png'
                 depth_npy_filename = filename + '.npy'
 
             # Create image path and write to disk
-            # image = np.transpose(np.squeeze(image.cpu().numpy()), (1, 2, 0))
-            # TODO: Anh: I'm modifying this temporarily, seems like the original color channel order is correct
-            image = np.squeeze(image.cpu().numpy())
+            image = np.transpose(np.squeeze(image.cpu().numpy()), (1, 2, 0))
 
             image_path = os.path.join(
                 image_dirpath,
@@ -293,7 +295,11 @@ def run_mde(image_path,
             output_depth_path = os.path.join(
                 output_depth_dirpath,
                 depth_filename)
-            data_utils.save_depth(output_depth, output_depth_path, depth_npy_filepath=depth_npy_filename)
+            output_depth_npy_path = os.path.join(
+                output_depth_npy_dirpath,
+                depth_npy_filename
+            )
+            data_utils.save_depth(output_depth, output_depth_path, depth_npy_filepath=output_depth_npy_path)
 
             if is_available_ground_truth:
                 # Create ground truth path and write to disk
@@ -303,7 +309,7 @@ def run_mde(image_path,
                     ground_truth_dirpath,
                     depth_filename)
                 ground_truth_npy_path = os.path.join(
-                    ground_truth_dirpath,
+                    ground_truth_npy_dirpath,
                     depth_npy_filename)
                 data_utils.save_depth(ground_truth, ground_truth_path, depth_npy_filepath=ground_truth_npy_path)
 

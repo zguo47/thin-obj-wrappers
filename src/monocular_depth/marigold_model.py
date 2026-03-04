@@ -31,15 +31,13 @@ class MarigoldModel(torch.nn.Module):
         super().__init__()
 
         if variant == "fp16":
-            dtype = torch.float16
+            self.dtype = torch.float16
         else:
-            dtype = torch.float32
+            self.dtype = torch.float32
 
         ckpt_path = os.path.join('model_ckpts', 'marigold', 'marigold-depth-v1-1')
-        self.model : MarigoldDepthPipeline = MarigoldDepthPipeline.from_pretrained(ckpt_path, variant=variant, torch_dtype=dtype)
+        self.model : MarigoldDepthPipeline = MarigoldDepthPipeline.from_pretrained(ckpt_path, variant=variant, torch_dtype=self.dtype)
 
-        # TODO: these are used when model is called. Check if I should just use the yaml/any of these fields require special handling or init
-        # or put them into a dict/subclass for better organization
         self.denoise_steps = denoise_steps
         self.ensemble_size = ensemble_size
         self.processing_res = processing_res
@@ -70,14 +68,19 @@ class MarigoldModel(torch.nn.Module):
         depth_outputs = []
 
         for ind_image in image:
+            # ind_image is in range [0, 255]
+
+            # NOTE: OPTION 1: convert to PIL Image and let Marigold handle the rest.
             # rgb_int = ind_image.cpu().squeeze().numpy().astype(np.uint8)  # [3, H, W]
             # rgb_int = np.moveaxis(rgb_int, 0, -1)  # [H, W, 3]
             # image_input = Image.fromarray(rgb_int)
 
-            # for depth, input values are not normalized
-            image_input = ind_image
-            # CHECKING RANGE
-            print("image input range & dtype:", image_input.min(), image_input.max(), image_input.dtype)
+            # NOTE: OPTION 2: keep as tensor, might be a bit faster.
+            # If using this option, processing_res (parameter passed into initialization for Marigold)
+            # MUST be set to 0, for some reason resize_max_res changes the value range of input in this case
+            if self.dtype == torch.float16:
+                ind_image = ind_image.half()
+            image_input = torch.unsqueeze(ind_image, dim=0).to(self.device) # [1, 3, H, W]
 
             # NOTE: this is only for inference, it's called with torch.no_grad
             # MarigoldDepthPipeline expects image_input to have size [1, rgb, H, W] if is tensor, and [H, W, rgb] if is PIL Image
@@ -95,8 +98,8 @@ class MarigoldModel(torch.nn.Module):
                         generator=self.generator,
                     )
 
-            # Range = [0,1], normal values, not inverse
-            depth_pred: np.ndarray = output.depth_np
+            # Range = [0,1], normal values, not inverse. need to convert to range [0, 255]
+            depth_pred: np.ndarray = output.depth_np * 255.0
             depth_outputs.append(depth_pred)
 
             depth_outputs = np.stack(depth_outputs)[:, None, :, :]
